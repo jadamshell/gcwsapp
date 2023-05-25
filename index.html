@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArcGIS Map with Toggleable Layers</title>
+  <script src="https://js.arcgis.com/4.22/"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.21/esri/themes/light/main.css"/>
+ <link href="https://cdn.jsdelivr.net/npm/intro.js@3.4.1/minified/introjs.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/intro.js@3.4.1/minified/intro.min.js"></script>
+
+  <style>
+    html, body, #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    
+    .side-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0px;
+  background-color: #f1f1f1;
+  overflow-x: hidden;
+  transition: all 0.3s ease-in-out;
+  z-index: 1000;
+  height: 100vh; /* Set the height to 100vh */
+}
+
+.side-panel.active {
+  width: 955px; /* Set the active width */
+}
+   #buttonContainer {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 20px;
+}
+.group-title {
+  margin-bottom: 10px;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+}
+  .group-title {
+  margin-bottom: 10px;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+  font-size: 18px; /* Increase the font size */
+  color: #0033A0; /* Change the font color */
+  background-color: rgba(255, 255, 255, 0.8); /* Add a white halo with 70% opacity */
+  padding: 5px; /* Add some padding around the text */
+  border-radius: 5px; /* Round the corners of the halo */
+}
+
+.group-icons {
+  display: flex;
+}
+
+  button {
+  display: block;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  background: none;
+  border: none;
+  padding: 0;
+  width: 48px;
+  height: 48px;
+  position: relative;
+  border-radius: 50%;
+}
+
+button::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: none;
+  transition: box-shadow 0.3s ease;
+}
+
+button.active::before {
+  box-shadow: 0 0 10px #0033A0;
+}
+    img {
+      width: 48px;
+      height: 48px;
+    }
+    /* Add the following CSS */
+#mainContainer {
+  display: grid;
+  grid-template-columns: 1fr 40%; /* Increase this value to make the side panel larger */
+  grid-template-rows: 1fr 1fr; /* Increase the second value to give more space to the graph */
+  height: 100%;
+}
+
+    #mapContainer {
+      grid-column: 1;
+      grid-row: 1 / span 2; /* Span the container for two rows */
+      position: relative; /* Add this line to position the icon buttons */
+    }
+
+    
+    #infoDiv {
+   background-color: white;
+   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+   grid-column: 2;
+   grid-row: 1;
+   overflow-y: auto;
+   z-index: 2;
+   height: 100%; /* Add this line to limit the height to 50% */
+    }
+  }
+
+ #graphContainer {
+  grid-column: 1 / span 2;
+  grid-row: 2;
+  overflow: auto;
+}
+
+.side-panel-image {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  max-height: 150px;
+  display: block;
+  margin: 0 auto;
+  margin-top: 40px;
+}
+
+.title-style {
+  font-size: 20px;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  text-align: Center;
+  display: block;
+  margin: 0 auto;
+  margin-top: 20px;
+  color: #0033A0;
+  background-color: #f1f1f1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  padding: 5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+}
+
+.subtitle-style {
+  font-size: 20px;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  text-align: Center;
+  display: block;
+  margin: 0 auto;
+  margin-top: 20px;
+  color: #0033A0;
+  background-color: #f1f1f1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  padding: 7px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+}   
+ 
+    .field-title {
+  font-size: 20px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  color: #333;
+  text-align: Center;
+  display: block;
+  margin: 0 auto;
+  margin-top: 20px;
+  color: #0033A0;
+  background-color: #f1f1f1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  padding: 7px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+}
+    
+ .team-image {
+  width: 300px;
+  height: 175px;
+  display: block;
+  margin: 0 auto;
+  margin-top: 10px;
+}
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(18px);
+  -ms-transform: translateX(18px);
+  transform: translateX(18px);
+}
+
+.slider.round {
+  border-radius: 22px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+  
+.custom-toggle {
+    background: white;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: sans-serif;
+    margin-bottom: 10px;
+  }
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+   .custom-legend {
+    margin-top: 10px;
+  }
+    .info-panel {
+      position: absolute;
+      top: 0;
+      left: -950px;
+      width: 950px;
+      height: 950px;
+      background-color: white;
+      z-index: 100;
+      overflow-y: scroll;
+      padding: 0px;
+      box-sizing: border-box;
+      transition: left 0.5s;
+    }
+    .cluster-modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.cluster-modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 50%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+  </style>
+</head>
+<body>
+  <div id="mainContainer">
+    <div id="mapContainer">
+      <div id="viewDiv"></div>
+      <div id="info-panel" class="info-panel"></div>
+       </div> 
+    <div id="infoDiv" class="side-panel"></div>
+    <div id="sampleSitesPanel" class="side-panel"></div>
+  <div id="graphContainer"></div>
+     <div id="buttonContainer">
+  <div class="group">
+    <div class="group-title">Human Health</div>
+    <div class="group-icons">
+      <button id="toggleLayer1" title="Overall Human Health"><img src="https://i.imgur.com/w0n7vZQ.png" alt="HHG_PH"></button>
+      <button id="toggleLayer2" title="Primary Contact Recreation"><img src="https://i.imgur.com/cHXffzG.png" alt="ECPC"></button>
+      <button id="toggleLayer3" title="Secondary Contact Recreation"><img src="https://i.imgur.com/EH4a9iM.png" alt="ECSC"></button>
+    </div>
+  </div>
+  <div class="group">
+    <div class="group-title">Water Quality</div>
+    <div class="group-icons">
+      <button id="toggleLayer4" title="Overall Water Quality"><img src="https://i.imgur.com/qfrnge5.png" alt="OWQG"></button>
+      <button id="toggleLayer5" title="Dissolved Oxygen"><img src="https://i.imgur.com/Ep0u3bZ.png" alt="DO"></button>
+      <button id="toggleLayer6" title="Conductivity"><img src="https://i.imgur.com/9mI7NBq.png" alt="Conductivity"></button>
+      <button id="toggleLayer7" title="pH"><img src="https://i.imgur.com/M9s9hKh.png" alt="pH"></button>
+      <button id="toggleLayer8" title="Nitrogen"><img src="https://i.imgur.com/BNG23PV.png" alt="TN"></button>
+      <button id="toggleLayer9" title="Phosphorus"><img src="https://i.imgur.com/0ROfzrK.png" alt="TP"></button>
+    </div>
+  </div>
+<div class="group">
+    <div class="group-title">Biology</div>
+    <div class="group-icons">
+      <button id="toggleLayer10" title="Macro Rating Score"><img src="https://i.imgur.com/kQhNIyD.png" alt="MACROG"></button>
+      <button id="toggleLayer11" title="Habitat Rating"><img src="https://i.imgur.com/4tZUN8e.png" alt="HABITATG"></button>   
+  </div>
+  <div id="cluster-modal" class="cluster-modal">
+  <div class="cluster-modal-content">
+    <span class="close">&times;</span>
+    <p id="cluster-message"></p>
+  </div>
+</div>
+
+<script src="https://js.arcgis.com/4.22/"></script>
+ <script>
+ require([
+  "esri/Map",
+  "esri/views/MapView",
+  "esri/layers/FeatureLayer",
+  "esri/layers/TileLayer",
+  "esri/Color",
+  "esri/widgets/Feature",
+  "esri/core/promiseUtils",
+  "esri/layers/support/FeatureReductionCluster",
+  "esri/widgets/Compass",
+  "esri/widgets/Legend",
+  "esri/widgets/Expand" 
+], function (
+  Map,
+  MapView,
+  FeatureLayer,
+  TileLayer,
+  Color,
+  Feature,
+  promiseUtils,
+  FeatureReductionCluster,
+  Compass,
+  Legend,
+  Expand 
+) {
+    const layerURL = "https://services.arcgis.com/vQ8kO5zdqETeirEL/arcgis/rest/services/GlennsSiteDrainage/FeatureServer";
+    const tileLayerURL = "https://tiles.arcgis.com/tiles/vQ8kO5zdqETeirEL/arcgis/rest/services/GCW_WTL1/MapServer";
+    const erosionLayerURL = "https://services.arcgis.com/vQ8kO5zdqETeirEL/arcgis/rest/services/Glenns_Creek_Watershed_Erosion_Survey_Sites/FeatureServer";
+const sampleSitesLayerURL = "https://services.arcgis.com/vQ8kO5zdqETeirEL/arcgis/rest/services/GC_Sample_Sites/FeatureServer";
+const streamsLayerURL = "https://services.arcgis.com/vQ8kO5zdqETeirEL/arcgis/rest/services/GC_Streams/FeatureServer";
+const glennsCreekBouLayerURL = "https://services.arcgis.com/vQ8kO5zdqETeirEL/arcgis/rest/services/GlennsCreekBou/FeatureServer";
+
+  const tileLayer = new TileLayer({
+    url: tileLayerURL
+  });
+
+  // Add this after creating the tileLayer
+ const erosionLayer = new FeatureLayer({
+  url: erosionLayerURL,
+  outFields: ["*"],
+  popupTemplate: {
+    title: "SCA Streambank Erosion Survey",
+    content: function (feature) {
+      const siteId = feature.graphic.attributes["Site_ID"];
+      const date_time = feature.graphic.attributes["Date_Time"];
+      const team = feature.graphic.attributes["Team"];
+      const access_1 = feature.graphic.attributes["Access_1"];
+      const correctabi = feature.graphic.attributes["Correctabi"];
+      const erosion_se = feature.graphic.attributes["Erosion_Se"];
+
+      const dateObject = new Date(date_time);
+      const formattedDate = dateObject.toLocaleDateString('en-US') + ' ' + dateObject.toLocaleTimeString('en-US');
+
+      const iframeUrls = {
+        "001": "https://glennscreekwatershed.org/share/5NTC0?logo=-1&info=0&fs=1&vr=0&zoom=1&thumbs=1&ovd=glennscreekwatershed.org",
+        "017": "https://glennscreekwatershed.org/share/NC9r5?logo=-1&info=0&fs=1&vr=0&zoom=1&thumbs=1&ovd=glennscreekwatershed.org"
+      };
+
+      const accessImgUrls = {
+        "1": "https://i.imgur.com/clIDvMZ.png",
+        "2": "https://i.imgur.com/TxDdt7V.png",
+        "3": "https://i.imgur.com/OQuVPMK.png",
+        "4": "https://i.imgur.com/Lyl6Rbp.png",
+        "5": "https://i.imgur.com/jP4BfSL.png"
+      };
+
+      const correctabiImgUrls = {
+        "1": "https://i.imgur.com/clIDvMZ.png",
+        "2": "https://i.imgur.com/TxDdt7V.png",
+        "3": "https://i.imgur.com/OQuVPMK.png",
+        "4": "https://i.imgur.com/Lyl6Rbp.png",
+        "5": "https://i.imgur.com/jP4BfSL.png"
+      };
+
+      const erosionImgUrls = {
+        "1": "https://i.imgur.com/65SuhDj.png",
+        "2": "https://i.imgur.com/Guw2w2M.png",
+        "3": "https://i.imgur.com/qXrMIqu.png",
+        "4": "https://i.imgur.com/04Jz3Iz.png",
+        "5": "https://i.imgur.com/AWOWhLI.png"
+      };
+
+      let content = `<span class="title-style">Stream View</span><br>`;
+      if (iframeUrls[siteId]) {
+        content += `<iframe width="100%" height="640" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen scrolling="no" src="${iframeUrls[siteId]}"></iframe>`;
+      }
+      content += `<br><span class="title-style">Sky View</span><br>`;
+content += `<iframe width="100%" height="640" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen scrolling="no" src="https://glennscreekwatershed.org/share/5NTjC?logo=-1&info=0&fs=1&vr=0&zoom=1&thumbs=1&ovd=glennscreekwatershed.org"></iframe>`;
+content += `<br><span class="subtitle-style">Date/Time:</span> ${formattedDate}<br>`;
+const teamImageUrl = "https://i.imgur.com/O70i3yB.png";
+content += `<span class="subtitle-style">Team</span><br><img src="${teamImageUrl}" class="team-image" alt="Team Image" /><br>`;
+content += `<span class="field-title">Access</span> <img src="${accessImgUrls[access_1]}" alt="Access Image" class="side-panel-image" /><br>`;
+content += `<span class="field-title">Correctability</span> <img src="${correctabiImgUrls[correctabi]}" alt="Correctability Image" class="side-panel-image" /><br>`;
+content += `<span class="field-title">Erosion Severity</span> <img src="${erosionImgUrls[erosion_se]}" alt="Erosion Severity Image" class="side-panel-image" />`;
+
+
+      return content;
+    }
+  }
+});
+const customSymbolUrl = "https://i.imgur.com/ulIvSTN.png";
+
+const erosionLayerRenderer = {
+  type: "simple",
+  symbol: {
+    type: "picture-marker",
+    url: customSymbolUrl,
+    width: "30px",
+    height: "30px",
+  }
+};
+
+const clusterConfig = {
+  type: "cluster",
+  clusterRadius: "100px",
+  clusterMinSize: "24px",
+  clusterMaxSize: "60px",
+  symbol: erosionLayerRenderer.symbol,
+  labelingInfo: [
+    {
+      deconflictionStrategy: "none",
+      labelExpressionInfo: {
+        expression: "Text($feature.cluster_count, '#,###')"
+      },
+      symbol: {
+        type: "text",
+        color: "#FFFFFF",
+        font: {
+          weight: "bold",
+          family: "Noto Sans",
+          size: "20px"
+        }
+      },
+      labelPlacement: "center-center"
+    }
+  ]
+};
+
+erosionLayer.renderer = erosionLayerRenderer;
+erosionLayer.featureReduction = clusterConfig;
+erosionLayer.effect = "bloom(0.1, 0.1px, 15%)";
+   
+  const sampleSiteLabelClass = {
+  symbol: {
+    type: "text",
+    color: "white",
+    font: {
+      size: 9,
+      family: "sans-serif",
+      weight: "bold"
+    }
+  },
+   labelPlacement: "center-center",
+  labelExpressionInfo: {
+    expression: "$feature.sampleSite"
+  }
+};   
+
+const sampleSiteSymbol = {
+  type: "picture-marker",
+  url: "https://i.imgur.com/u35x3rc.png",
+  width: "28px",
+  height: "28px",
+  id: "sampleSiteSymbol",
+};   
+ 
+const sampleSitesLayer = new FeatureLayer({
+  url: sampleSitesLayerURL,
+  outFields: ["*", "MACROG", "HABITATG"],
+  renderer: {
+    type: "simple",
+    symbol: sampleSiteSymbol
+  },
+  labelingInfo: [sampleSiteLabelClass],
+  popupTemplate: {
+    title: "Sample Site Information",
+    content: function (feature) {
+      const sampleSite = feature.graphic.attributes["sampleSite"];
+      const siteDescription = feature.graphic.attributes["Site_Description"];
+      const tda = feature.graphic.attributes["TDA"];
+
+      const streamViewIframes = {
+        "51": "https://glennscreekwatershed.org/share/5NTC0?logo=-1&info=0&fs=1&vr=0&zoom=1&thumbs=1&ovd=glennscreekwatershed.org"
+        // Add more iframe sources here...
+      };
+
+      const skyViewIframes = {
+        "51": "https://glennscreekwatershed.org/share/5NTjC?logo=-1&info=0&fs=1&vr=0&zoom=1&thumbs=1&ovd=glennscreekwatershed.org"
+        
+      };
+
+      let content = `<span class="title-style">Monitoring Site: ${sampleSite}</span><br>`;
+      content += `<span class="field-title">Site Description</span>: ${siteDescription}<br>`;
+      content += `<span class="field-title">Total Drainage Area</span>: ${tda}<br>`;
+
+      content += `<span class="title-style">Stream View</span><br>`;
+      if (streamViewIframes[sampleSite]) {
+        content += `<iframe width="100%" height="640" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen scrolling="no" src="${streamViewIframes[sampleSite]}"></iframe>`;
+      }
+
+      content += `<span class="title-style">Sky View</span><br>`;
+      if (skyViewIframes[sampleSite]) {
+        content += `<iframe width="100%" height="640" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen scrolling="no" src="${skyViewIframes[sampleSite]}"></iframe>`;
+      }
+
+      
+const bedSubstrateIframes = {
+        "44": "https://flo.uri.sh/visualisation/13722295/embed",
+        "45": "https://flo.uri.sh/visualisation/13722349/embed",
+        "46": "https://flo.uri.sh/visualisation/13722362/embed",
+        "47": "https://flo.uri.sh/visualisation/13722382/embed",
+        "48": "https://flo.uri.sh/visualisation/13722394/embed",
+        "42": "https://flo.uri.sh/visualisation/13722406/embed",
+        "49": "https://flo.uri.sh/visualisation/13722476/embed",
+        "50": "https://flo.uri.sh/visualisation/13722523/embed",
+        "51": "https://flo.uri.sh/visualisation/13722549/embed"
+      };
+
+content += `<span class="title-style">Bed Substrate</span><br>`;
+if (bedSubstrateIframes[sampleSite]) {
+  content += `<iframe width="100%" height="640" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen scrolling="no" src="${bedSubstrateIframes[sampleSite]}"></iframe>`;
+}
+
+const habitatRatingIframes = {
+        "44": "https://flo.uri.sh/visualisation/13726957/embed",
+        "45": "https://flo.uri.sh/visualisation/13726937/embed",
+        "46": "https://flo.uri.sh/visualisation/13726702/embed",
+        "47": "https://flo.uri.sh/visualisation/13726981/embed",
+        "48": "https://flo.uri.sh/visualisation/13727021/embed",
+        "42": "https://flo.uri.sh/visualisation/13726985/embed",
+        "49": "https://flo.uri.sh/visualisation/13727006/embed",
+        "50": "https://flo.uri.sh/visualisation/13727082/embed",
+        "51": "https://flo.uri.sh/visualisation/13727310/embed"
+      };
+
+content += `<span class="title-style">Habitat Rating</span><br>`;
+if (habitatRatingIframes[sampleSite]) {
+  content += `<iframe width="100%" height="640" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen scrolling="no" src="${habitatRatingIframes[sampleSite]}"></iframe>`;
+}
+
+const macroRatingIframes = {
+        "44": "https://flo.uri.sh/visualisation/13727341/embed",
+        "45": "https://flo.uri.sh/visualisation/13727381/embed",
+        "46": "https://flo.uri.sh/visualisation/13727388/embed",
+        "47": "https://flo.uri.sh/visualisation/13727396/embed",
+        "48": "https://flo.uri.sh/visualisation/13727303/embed",
+        "42": "https://flo.uri.sh/visualisation/13727402/embed",
+        "49": "https://flo.uri.sh/visualisation/13727405/embed",
+        "50": "https://flo.uri.sh/visualisation/13727291/embed",
+        "51": "https://flo.uri.sh/visualisation/13727108/embed"
+      };
+
+content += `<span class="title-style">Macro Rating</span><br>`;
+if (macroRatingIframes[sampleSite]) {
+  content += `<iframe width="100%" height="640" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen scrolling="no" src="${macroRatingIframes[sampleSite]}"></iframe>`;
+}
+
+return content;
+  }
+  }
+});   
+
+sampleSitesLayer.effect = "bloom(0.1, 0.1px, 15%)";
+
+let bounceDirection = 1;
+let bounceAmount = 0;
+const maxBounce = 0.1;
+
+function animateBounce() {
+  bounceAmount += bounceDirection * 2;
+  if (bounceAmount >= maxBounce || bounceAmount <= 0) {
+    bounceDirection *= -1;
+  }
+
+  const updatedSymbol = {
+    type: "picture-marker",
+    url: "https://i.imgur.com/u35x3rc.png",
+    width: "28px",
+    height: "28px",
+    yoffset: bounceAmount,
+    id: "sampleSiteSymbol",
+  };
+
+  sampleSitesLayer.renderer.symbol = updatedSymbol;
+}
+
+setInterval(animateBounce, 1000); 
+   
+ const originalRenderer = sampleSitesLayer.renderer;
+   
+   
+  
+ const uniqueValueInfosMACROG = [
+  { value: "Very Poor", symbol: { type: "picture-marker", url: "https://i.imgur.com/M6iTMVS.png", width: "28px", height: "28px" } },
+  { value: "Poor", symbol: { type: "picture-marker", url: "https://i.imgur.com/eNDPiMl.png", width: "28px", height: "28px" } },
+  { value: "Fair", symbol: { type: "picture-marker", url: "https://i.imgur.com/St5IYbj.png", width: "28px", height: "28px" } },
+  { value: "Good", symbol: { type: "picture-marker", url: "https://i.imgur.com/yKstcrI.png", width: "28px", height: "28px" } },
+  { value: "Excellent", symbol: { type: "picture-marker", url: "https://i.imgur.com/NsgtTWJ.png", width: "28px", height: "28px" } },
+];
+
+const uniqueValueInfosHABITATG = [
+  { value: "Poor", symbol: { type: "picture-marker", url: "https://i.imgur.com/M6iTMVS.png", width: "28px", height: "28px" } },
+  { value: "Fair", symbol: { type: "picture-marker", url: "https://i.imgur.com/St5IYbj.png", width: "28px", height: "28px" } },
+  { value: "Good", symbol: { type: "picture-marker", url: "https://i.imgur.com/NsgtTWJ.png", width: "28px", height: "28px" } },
+];
+// Get all buttons
+const buttons = document.querySelectorAll('button');
+
+// Iterate over all buttons and add the event listener
+buttons.forEach((button) => {
+  button.addEventListener('click', () => {
+    // Reset the renderer to the original
+    sampleSitesLayer.renderer = originalRenderer;
+  });
+});
+
+   // Add event listener to toggleLayer10 button
+document.getElementById("toggleLayer10").addEventListener("click", function() {
+  // When the button is clicked, change the renderer of the sampleSitesLayer
+  sampleSitesLayer.renderer = {
+    type: "unique-value",
+    field: "MACROG",
+    uniqueValueInfos: uniqueValueInfosMACROG
+  };
+});
+
+// Add event listener to toggleLayer11 button
+document.getElementById("toggleLayer11").addEventListener("click", function() {
+  // When the button is clicked, change the renderer of the sampleSitesLayer
+  sampleSitesLayer.renderer = {
+    type: "unique-value",
+    field: "HABITATG",
+    uniqueValueInfos: uniqueValueInfosHABITATG
+  };
+}); 
+   
+const streamsLayer = new FeatureLayer({
+  url: streamsLayerURL,
+  outFields: ["*"]
+});
+   streamsLayer.renderer = {
+  type: "simple",
+  symbol: {
+    type: "simple-fill",
+    color: [5, 64, 242, 0.20], // UPDATED: Change the fill color and opacity here [R, G, B, Opacity]
+    outline: {
+      color: [15, 90, 242, 0.20], // UPDATED: Change the outline color and opacity here [R, G, B, Opacity]
+      width: 1.5
+    }
+  }
+};
+streamsLayer.effect = "bloom(0.5, 0.1px, 15%)";
+   
+const glennsCreekBouLayer = new FeatureLayer({
+  url: glennsCreekBouLayerURL,
+  outFields: ["*"]
+}); 
+
+ glennsCreekBouLayer.renderer = {
+  type: "simple",
+  symbol: {
+    type: "simple-fill",
+    color: [0, 0, 0, 0.0], // UPDATED: Change the fill color and opacity here [R, G, B, Opacity]
+    outline: {
+      color: [89, 54, 10, 0.75], // UPDATED: Change the outline color and opacity here [R, G, B, Opacity]
+      width: 1
+    }
+  }
+};
+   
+  const fieldNames = [
+    "HHG_PH", "ECPC", "ECSC", "OWQG", "DO", "Conductivity", "pH", "TN", "TP"
+  ];
+
+    const uniqueValueInfos = [
+      { value: "A", symbol: { type: "simple-fill", color: new Color([24, 77, 71, 0.58]), outline: { color: "#402a1e", width: 1 } } },
+      { value: "B", symbol: { type: "simple-fill", color: new Color([150, 187, 124, 0.58]), outline: { color: "#402a1e", width: 1 } } },
+      { value: "C", symbol: { type: "simple-fill", color: new Color([250, 213, 134, 0.58]), outline: { color: "#402a1e", width: 1 } } },
+      { value: "D", symbol: { type: "simple-fill", color: new Color([227, 152, 39, 0.58]), outline: { color: "#402a1e", width: 1 } } },
+      { value: "F", symbol: { type: "simple-fill", color: new Color([198, 71, 86, 0.58]), outline: { color: "#402a1e", width: 1 } } },
+    ];
+
+    const layers = fieldNames.map((fieldName, index) => {
+      return new FeatureLayer({
+        url: layerURL,
+        visible: index === 8,
+        renderer: {
+          type: "unique-value",
+          field: fieldName,
+          uniqueValueInfos: uniqueValueInfos
+        },
+        labelingInfo: [
+          {
+            labelExpressionInfo: {
+              expression: "$feature." + fieldName
+            },
+            symbol: {
+              type: "text",
+              color: "black",
+              haloColor: "white",
+              haloSize: 1,
+              font: {
+                size: 15,
+                weight: "bold"
+              }
+            }
+          }
+        ],
+        popupTemplate: {
+          title: "{NAME}",
+          content: [
+            {
+              type: "fields",
+              fieldInfos: [
+                {
+                  fieldName: fieldName,
+                  label: fieldName,
+                  visible: true
+                }
+              ]
+            }
+          ]
+        }
+      });
+    });
+
+const map = new Map({
+  basemap: "topo-vector",
+  layers: [tileLayer, ...layers, erosionLayer, sampleSitesLayer, streamsLayer, glennsCreekBouLayer]
+});
+
+    const view = new MapView({
+      container: "viewDiv",
+      map: map,
+      zoom: 4
+      
+    });
+   
+  view.when(function () {
+  // Reorder sampleSitesLayer to the topmost position
+  map.reorder(sampleSitesLayer, map.layers.length - 1);
+
+  // Reorder erosionLayer below sampleSitesLayer
+  map.reorder(erosionLayer, map.layers.indexOf(sampleSitesLayer) - 1);
+});
+
+  const legend = new Legend({
+  view: view,
+  layerInfos: [
+    ...fieldNames.map((fieldName, index) => ({
+      layer: layers[index],
+      title: "Watershed Grades"
+    })),
+    { layer: streamsLayer, title: "Hydrology" },
+    { layer: sampleSitesLayer, title: "Monitoring Sites" },
+    { layer: erosionLayer, title: "Erosion Survey Sites" }
+  ],
+  container: document.createElement("div")
+});
+legend.container.classList.add("custom-legend");
+view.ui.add(legend.container, "bottom-right");
+
+
+   
+   const compass = new Compass({
+  view: view
+});
+
+view.ui.add(compass, "top-left");
+   
+   const toggleLegendButton = document.getElementById("toggleLegend");
+let legendVisible = true;
+
+
+ const toggleContainer = document.createElement("div");
+toggleContainer.classList.add("custom-toggle");
+
+const createToggleRow = (layer, title) => {
+  const row = document.createElement("div");
+  row.classList.add("toggle-row");
+
+  const label = document.createElement("label");
+  label.textContent = title;
+
+  const toggleSwitch = document.createElement("input");
+  toggleSwitch.type = "checkbox";
+  toggleSwitch.checked = layer.visible;
+  toggleSwitch.addEventListener("change", () => {
+    layer.visible = toggleSwitch.checked;
+  });
+
+  row.appendChild(label);
+  row.appendChild(toggleSwitch);
+
+  return row;
+};
+
+const createLegendToggle = () => {
+  const legendToggleRow = document.createElement("div");
+  legendToggleRow.classList.add("toggle-row");
+
+  const legendLabel = document.createElement("label");
+  legendLabel.textContent = "Show Legend";
+
+  const legendToggle = document.createElement("input");
+  legendToggle.type = "checkbox";
+  legendToggle.checked = true;
+  legendToggle.addEventListener("change", () => {
+    legend.container.style.display = legendToggle.checked ? "block" : "none";
+  });
+
+  legendToggleRow.appendChild(legendLabel);
+  legendToggleRow.appendChild(legendToggle);
+
+  return legendToggleRow;
+};
+
+toggleContainer.appendChild(createLegendToggle());
+toggleContainer.appendChild(createToggleRow(erosionLayer, "Erosion Survey Sites"));
+toggleContainer.appendChild(createToggleRow(sampleSitesLayer, "Monitoring Sites"));
+toggleContainer.appendChild(createToggleRow(streamsLayer, "Hydrology"));
+
+view.ui.add(toggleContainer, "top-right");
+toggleContainer.appendChild(legend.container);
+
+view.ui.move(legend.container, "bottom-right");  
+    const feature = new Feature({
+      container: "infoDiv",
+      graphic: null,
+      map: view.map,
+      spatialReference: view.spatialReference
+    });
+
+    const debouncedUpdate = promiseUtils.debounce(async (event) => {
+      const hitTest = await view.hitTest(event);
+      const results = hitTest.results.filter((result) => {
+        return result.graphic.layer.popupTemplate;
+      });
+
+      const result = results.find(result => result.graphic.layer === erosionLayer);
+
+      if (result) {
+        const graphic = result.graphic;
+        feature.graphic = graphic;
+        feature.content = graphic.layer.popupTemplate.content(graphic);
+      } else {
+        feature.graphic = null;
+        document.getElementById("infoDiv").innerHTML = "No information available";
+      }
+    });
+
+view.on("click", function (event) {
+  view.hitTest(event).then(function (response) {
+    const graphic = response.results.find(result => result.graphic.layer === erosionLayer)?.graphic;
+    
+    if (graphic) {
+      const siteId = graphic.attributes["Site_ID"];
+      const date_time = graphic.attributes["Date_Time"];
+      const team = graphic.attributes["Team"];
+      const access_1 = graphic.attributes["Access_1"];
+      const correctabi = graphic.attributes["Correctabi"];
+      const erosion_se = graphic.attributes["Erosion_Se"];
+      const dateObject = new Date(date_time);
+      const formattedDate = dateObject.toLocaleDateString('en-US') + ' ' + dateObject.toLocaleTimeString('en-US');
+
+      const iframeUrls = {
+        "001": "https://glennscreekwatershed.org/share/5NTC0?logo=-1&info=0&fs=1&vr=0&zoom=1&thumbs=1&ovd=glennscreekwatershed.org",
+        "017": "https://glennscreekwatershed.org/share/NC9r5?logo=-1&info=0&fs=1&vr=0&zoom=1&thumbs=1&ovd=glennscreekwatershed.org"
+      };
+const skyIframeUrls = {
+        "017": "https://glennscreekwatershed.org/share/NCYR3?logo=-1&info=0&fs=1&vr=0&zoom=1&thumbs=1&ovd=glennscreekwatershed.org"
+      };
+      const accessImgUrls = {
+        "1": "https://i.imgur.com/clIDvMZ.png",
+        "2": "https://i.imgur.com/TxDdt7V.png",
+        "3": "https://i.imgur.com/OQuVPMK.png",
+        "4": "https://i.imgur.com/Lyl6Rbp.png",
+        "5": "https://i.imgur.com/jP4BfSL.png"
+      };
+
+      const correctabiImgUrls = {
+        "1": "https://i.imgur.com/clIDvMZ.png",
+        "2": "https://i.imgur.com/TxDdt7V.png",
+        "3": "https://i.imgur.com/OQuVPMK.png",
+        "4": "https://i.imgur.com/Lyl6Rbp.png",
+        "5": "https://i.imgur.com/jP4BfSL.png"
+      };
+
+      const erosionImgUrls = {
+        "1": "https://i.imgur.com/65SuhDj.png",
+        "2": "https://i.imgur.com/Guw2w2M.png",
+        "3": "https://i.imgur.com/qXrMIqu.png",
+        "4": "https://i.imgur.com/04Jz3Iz.png",
+        "5": "https://i.imgur.com/AWOWhLI.png"
+      };
+
+      let content = `<span class="title-style">Stream View</span><br>`;
+      if (iframeUrls[siteId]) {
+        content += `<iframe width="100%" height="640" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen scrolling="no" src="${iframeUrls[siteId]}"></iframe>`;
+      }
+      content += `<br><span class="title-style">Sky View</span><br>`;
+      if (skyIframeUrls[siteId]) {
+        content += `<iframe width="100%" height="640" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen scrolling="no" src="${skyIframeUrls[siteId]}"></iframe>`;
+      }
+     content += `<br><span class="subtitle-style">Date/Time</span> ${formattedDate}<br>`;
+const teamImageUrl = "https://i.imgur.com/O70i3yB.png";
+content += `<span class="subtitle-style">Team</span><br><img src="${teamImageUrl}" class="team-image" alt="Team Image" /><br>`;
+content += `<span class="field-title">Access</span> <img src="${accessImgUrls[access_1]}" alt="Access Image" class="side-panel-image" /><br>`;
+content += `<span class="field-title">Correctability</span> <img src="${correctabiImgUrls[correctabi]}" alt="Correctability Image" class="side-panel-image" /><br>`;
+content += `<span class="field-title">Erosion Severity</span> <img src="${erosionImgUrls[erosion_se]}" alt="Erosion Severity Image" class="side-panel-image" />`;
+
+      
+      document.getElementById("infoDiv").innerHTML = content;
+    } else {
+      document.getElementById("infoDiv").innerHTML = "No information available";
+    }
+  });
+});
+
+view.when(function () {
+  layers[0].when(function () {
+    view.goTo(layers[0].fullExtent);
+  });
+});
+
+const graphContainer = document.getElementById("graphContainer");
+const graphIframes = {
+  "pH": "<iframe src='https://flo.uri.sh/visualisation/13697280/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
+  "Conductivity": "<iframe src='https://flo.uri.sh/visualisation/13697402/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
+  "DO": "<iframe src='https://flo.uri.sh/visualisation/13697482/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
+  "HHG_PH": "<iframe src='https://flo.uri.sh/visualisation/13725531/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
+  "ECPC": "<iframe src='https://flo.uri.sh/visualisation/13491275/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
+  "ECSC": "<iframe src='https://flo.uri.sh/visualisation/13491275/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
+  "TN": "<iframe src='https://flo.uri.sh/visualisation/13495672/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
+  "TP": "<iframe src='https://flo.uri.sh/visualisation/13177665/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
+  "OWQG": "<iframe src='https://flo.uri.sh/visualisation/13725531/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
+  "MACROG": "<iframe src='https://flo.uri.sh/story/1916588/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
+  "HABITATG": "<iframe src='https://flo.uri.sh/story/1918825/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
+};
+
+const overlay = document.createElement("div");
+overlay.id = "overlay";
+overlay.style.position = "absolute";
+overlay.style.top = "0";
+overlay.style.left = "0";
+overlay.style.width = "100%";
+overlay.style.height = "100%";
+overlay.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
+overlay.style.display = "none";
+overlay.style.justifyContent = "center";
+overlay.style.alignItems = "center";
+overlay.style.textAlign = "center";
+overlay.style.zIndex = "1000";
+overlay.innerHTML = "<p style='color: red; font-weight: bold;'>Sorry, the Macroinvertebrate data is currently unavailable; check back soon for updates.</p>";
+graphContainer.style.position = "relative";
+graphContainer.appendChild(overlay);
+ 
+   document.getElementById("toggleLayer10").addEventListener("click", function() {
+  graphContainer.innerHTML = graphIframes["MACROG"];
+ graphContainer.appendChild(overlay); // Append the overlay after setting innerHTML
+  overlay.style.display = "flex"; // Show the overlay    
+});
+
+document.getElementById("toggleLayer11").addEventListener("click", function() {
+  graphContainer.innerHTML = graphIframes["HABITATG"];
+  graphContainer.appendChild(overlay); // Append the overlay after setting innerHTML
+  overlay.style.display = "none"; // Hide the overlay
+});
+   
+function showGraph(visible, iframeHTML) {
+  if (visible && iframeHTML) {
+    graphContainer.innerHTML = iframeHTML;
+    graphContainer.style.display = "block";
+    graphContainer.style.width = "100%";
+    graphContainer.style.height = "100%";
+  } else {
+    graphContainer.innerHTML = "";
+    graphContainer.style.display = "none";
+  }
+}
+
+
+   
+view.popup.watch("visible", function (newValue) {
+  const feature = view.popup.selectedFeature;
+  if (feature && feature.layer === erosionLayer) {
+    document.getElementById("viewDiv").classList.add("hide-graph");
+  } else {
+    document.getElementById("viewDiv").classList.remove("hide-graph");
+  }
+});
+
+function toggleLayer(index) {
+  layers[index].visible = !layers[index].visible;
+  const button = document.getElementById(`toggleLayer${index + 1}`);
+  button.classList.toggle("active");
+
+  layers.forEach((layer, i) => {
+    if (i !== index) {
+      layer.visible = false;
+      const otherButton = document.getElementById(`toggleLayer${i + 1}`);
+      otherButton.classList.remove("active");
+    }
+  });
+
+  // Show or hide the graph depending on the visibility of the layer
+  const iframeHTML = graphIframes[fieldNames[index]];
+  showGraph(layers[index].visible, iframeHTML);
+}
+
+// And for the other toggleLayer buttons...
+fieldNames.forEach((fieldName, index) => {
+  const button = document.getElementById(`toggleLayer${index + 1}`);
+  button.addEventListener("click", function () {
+    toggleLayer(index);
+    overlay.style.display = "none"; // Hide the overlay
+  });
+  if (index === 8) button.classList.add("active");
+});
+
+// Add this line to show the iframe when the page loads
+showGraph(true, graphIframes["TP"]);
+
+  view.popup.watch("visible", function (newValue) {
+        if (newValue) {
+          view.popup.close();
+        }
+      });
+ // Get the side panel element
+const sidePanel = document.querySelector('.side-panel');
+
+// Function to open the side panel
+function openSidePanel() {
+  sidePanel.classList.add('active');
+}
+
+// Function to populate the side panel with content
+function populateSidePanel(content) {
+  const sidePanel = document.querySelector('.side-panel');
+  sidePanel.innerHTML = content;
+  sidePanel.classList.add('active');
+}
+
+// Close the side panel
+function closeSidePanel() {
+  const sidePanel = document.querySelector('.side-panel');
+  sidePanel.classList.remove('active');
+}
+
+// Close the side panel when clicking outside of it
+window.addEventListener('click', (event) => {
+  if (event.target !== sidePanel && !sidePanel.contains(event.target)) {
+    closeSidePanel();
+  }
+});
+
+view.on("click", function (event) {
+  // Check if a feature was clicked
+  view.hitTest(event).then(function (response) {
+    if (response.results.length > 0) {
+      const graphic = response.results[0].graphic;
+
+      // Check if the clicked graphic belongs to the erosionLayer
+      if (graphic.layer === erosionLayer) {
+        // Check if the clicked feature is a cluster
+        if (graphic.isAggregate) {
+          // Get the cluster count
+          const clusterCount = graphic.attributes.cluster_count;
+
+          // Show a message with the number of Erosion Sites in the cluster
+          alert(`There are ${clusterCount} Erosion Sites in this area. Zoom in until you see a single feature to get detailed information about the site.`);
+        } else {
+          // Use the constructed content for the popup
+          const content = erosionLayer.popupTemplate.content({ graphic });
+          populateSidePanel(content);
+        }
+      }
+    } else {
+      // Close the side panel if no point feature was clicked
+      closeSidePanel();
+    }
+  });
+});
+
+   
+ view.ui.add("info-panel", "top-left");
+
+     view.when(function() {
+  view.on("click", function(event) {
+    view.hitTest(event).then(function(response) {
+      const infoPanel = document.getElementById("info-panel");
+
+      if (response.results.length) {
+        const graphic = response.results[0].graphic;
+        const layer = graphic.layer;
+
+        if (layer === sampleSitesLayer) {
+          infoPanel.innerHTML = sampleSitesLayer.popupTemplate.content({ graphic });
+          infoPanel.style.left = "0";
+        }
+      } else {
+        infoPanel.style.left = "-950px";
+      }
+    });
+  });
+
+  // Add this event listener to handle clicks outside the panel
+  document.addEventListener("click", function(event) {
+    const infoPanel = document.getElementById("info-panel");
+    if (!infoPanel.contains(event.target) && infoPanel.style.left === "0px") {
+      infoPanel.style.left = "-950px";
+    }
+  });
+});
+  });
+</script>
+</body>
+</html>

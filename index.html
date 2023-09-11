@@ -1013,22 +1013,6 @@ const graphIframes = {
   "HABITATG": "<iframe src='https://flo.uri.sh/story/1918825/embed' width='100%' height='800' frameborder='0' ... ></iframe>",
 };
 
-const overlay = document.createElement("div");
-overlay.id = "overlay";
-overlay.style.position = "absolute";
-overlay.style.top = "0";
-overlay.style.left = "0";
-overlay.style.width = "100%";
-overlay.style.height = "100%";
-overlay.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
-overlay.style.display = "none";
-overlay.style.justifyContent = "center";
-overlay.style.alignItems = "center";
-overlay.style.textAlign = "center";
-overlay.style.zIndex = "1000";
-overlay.innerHTML = "<p style='color: red; font-weight: bold;'>Sorry, the Macroinvertebrate data is currently unavailable; check back soon for updates.</p>";
-graphContainer.style.position = "relative";
-graphContainer.appendChild(overlay);
  
    document.getElementById("toggleLayer10").addEventListener("click", function() {
   graphContainer.innerHTML = graphIframes["MACROG"];
